@@ -8,3 +8,4 @@
 
 问题二：spring boot/spring cloud 整合Sentinel 时的spring boot 版本为 2.3.2.RELEASE
     参考开源框架适配：https://github.com/alibaba/spring-cloud-alibaba/wiki/Sentinel
+
