@@ -1,7 +1,10 @@
 package com.example.servicea.controller;
 
+import com.example.servicea.service.TestService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
 
 /**
  * @author Andy
@@ -11,9 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TestController {
 
+    @Resource
+    private TestService testService;
 
     @GetMapping("test")
     public String test(){
-        return "ok";
+        return testService.test();
     }
 }

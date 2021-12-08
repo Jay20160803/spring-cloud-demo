@@ -7,3 +7,7 @@ spring:
     nacos:
       discovery:
         server-addr: 119.3.123.94:8848
+    sentinel:
+      transport:
+        port: 8719
+        dashboard: localhost:8847
