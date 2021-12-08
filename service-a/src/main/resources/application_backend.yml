@@ -1,0 +1,9 @@
+server:
+  port: 7002
+spring:
+  application:
+    name: service-a
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 119.3.123.94:8848

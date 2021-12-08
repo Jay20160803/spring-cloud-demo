@@ -1,0 +1,9 @@
+server:
+  port: 7003
+spring:
+  application:
+    name: service-b
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 119.3.123.94:8848

@@ -23,6 +23,7 @@
 
     <modules>
         <module>sentinel</module>
+        <module>service-a</module>
     </modules>
 
     <dependencyManagement>
