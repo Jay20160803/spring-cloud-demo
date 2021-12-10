@@ -3,6 +3,11 @@ springboot + nacos + sentinel + gateway + openFeign + Security + Sleuth
 服务注册与发现:
 限流降级：
 网关:
+# spring boot/spring cloud/spring cloud alibaba 版本关系
+```
+ spring cloud alibaba 版本对应的 spring boot 版本 一致
+ spring cloud 对应的spring boot 版本在 github wiki 中查看
+```
 
 # service-a/service-b:
 # 1、整合nacos 服务注册与发现 已完成
@@ -27,3 +32,10 @@ java -Dserver.port=8847 -Dcsp.sentinel.dashboard.server=localhost:8847 -Dproject
 - 4、[查看机器列表以及健康情况]() 
 - 5、[集群流控]()
        
+# 4、openFeign
+1、[文档](https://docs.spring.io/spring-cloud-openfeign/docs/current/reference/html/)
+- 依赖
+```
+spring-cloud-starter-openfeign
+```
+- 
