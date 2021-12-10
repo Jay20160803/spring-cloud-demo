@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -21,32 +22,32 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@RefreshScope
 public class SentinelNacosDataSourceConfig implements ApplicationRunner {
 
-    @Value("${nacosAddress}")
+    @Value("${spring.cloud.nacos.discovery.server-addr}")
     private String nacosAddress;
 
-    @Value("${groupId}")
+    @Value("${spring.cloud.sentinel.flow-rule.groupId}")
     private String groupId;
 
-    @Value("${dataId}")
-    private String dataId;
+    @Value("${spring.cloud.sentinel.flow-rule.dataId}")
+    private String flowRuleDataId;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
 
         try {
-
-            loadRules();
+            loadFlowRules();
         } catch (Exception e) {
             log.error("sentinel nacos data 加载异常",e);
         }
 
-
     }
 
-    private void loadRules() {
-        ReadableDataSource<String, List<FlowRule>> flowRuleDataSource = new NacosDataSource<>(nacosAddress, groupId, dataId,
+    //加载流量控制规则
+    private void loadFlowRules() {
+        ReadableDataSource<String, List<FlowRule>> flowRuleDataSource = new NacosDataSource<>(nacosAddress, groupId, flowRuleDataId,
                 source -> JSON.parseObject(source, new TypeReference<List<FlowRule>>() {
                 }));
         FlowRuleManager.register2Property(flowRuleDataSource.getProperty());
