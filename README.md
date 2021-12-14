@@ -1,4 +1,4 @@
-springboot + nacos + sentinel + gateway + openFeign + Security + Sleuth
+springboot + nacos + sentinel + gateway + openFeign + spring cloud LoadBalancer  + Security + Sleuth
 
 服务注册与发现:
 限流降级：
@@ -37,5 +37,132 @@ java -Dserver.port=8847 -Dcsp.sentinel.dashboard.server=localhost:8847 -Dproject
 - 依赖
 ```
 spring-cloud-starter-openfeign
+
+Spring Cloud Netflix Ribbon 现在处于维护模式，因此我们建议改用 Spring Cloud LoadBalancer
+spring-cloud-starter-loadbalancer
 ```
-- 
+2、 声明式REST客户端：Feign
+```
+1、可插入的注释支持
+2、可插拔的编码器和解码器
+3、集成了Ribbon和Eureka,Spring cloud CircuitBreaker来提供使用Feign时负载均衡的http客户端
+```  
+2.1 如何包含Feign
+```
+1、@EnableFeignClients 启动类上注解
+2、@FeignClient 客户端接口注解
+3、设置服务注册列表获取（待确定）
+4、设置客户端负载均衡（待确定）
+5、设置熔断与服务降级（待确定）
+```
+2.2 覆盖 Feign 默认值
+- 默认feign配置
+```
+FeignClientsConfiguration 中
+DecoderfeignDecoder: ResponseEntityDecoder( 包装了一个SpringDecoder)
+Encoder feign编码器： SpringEncoder
+Logger 伪装记录器： Slf4jLogger
+Contract 假合同： SpringMvcContract
+Feign.Builder feignBuilder： HystrixFeign.Builder
+Feign.Builder feignBuilder： FeignCircuitBreaker.Builder
+ClientfeignClient：如果 Ribbon 在类路径中并启用它是一个LoadBalancerFeignClient，否则如果 Spring Cloud LoadBalancer 在类路径中，FeignBlockingLoadBalancerClient则使用。如果它们都不在类路径中，则使用默认的伪装客户端
+```
+- 没有的feign配置
+```
+Logger.Level
+Retryer: Retryer.NEVER_RETRY 这将禁用重试
+ErrorDecoder
+Request.Options
+Collection<RequestInterceptor>
+SetterFactory
+QueryMapEncoder
+```
+- 创建一种类型的bean 并将其放置在 @FeignClient 中 允许您覆盖所描述的每个 bean
+```
+不需要用@Configuration,不让会成全局配置（例如 ServiceBFeignConfig）
+```
+- @FeignClient 也可以使用配置属性进行配置
+```
+配置feignName 客户端
+
+feign:
+  client:
+    config:
+      feignName:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: full
+        errorDecoder: com.example.SimpleErrorDecoder
+        retryer: com.example.SimpleRetryer
+       defaultQueryParameters:
+          query: queryValue
+        defaultRequestHeaders:
+          header: headerValue
+        requestInterceptors:
+          - com.example.FooRequestInterceptor
+          - com.example.BarRequestInterceptor
+        decode404: false
+        encoder: com.example.SimpleEncoder
+        decoder: com.example.SimpleDecoder
+        contract: com.example.SimpleContract
+                
+配置所有客户端
+feign:
+   config:
+      default:
+         connectTimeout: 5000
+feign:
+  sentinel:
+    enabled: true
+  okhttp:
+    enabled: true
+ 
+如果我们同时创建@Configurationbean 和配置属性，配置属性将获胜。它将覆盖@Configuration值              
+```
+2.3 SpringEncoder 配置
+
+3、 超时处理
+```
+OpenFeign 使用两个超时参数：
+connectTimeout: 防止由于服务器处理时间长而阻塞调用者
+readTimeout 从连接建立时开始应用，在返回响应时间过长时触发
+```
+4、手动创建Feign客户端
+```
+在某些情况下，可能需要以使用上述方法无法实现的方式自定义您的 Feign Client。
+在这种情况下，您可以使用Feign Builder API创建客户端 。
+```
+5、Feign Spring Cloud 断路器支持
+```
+如果 Spring Cloud CircuitBreaker 在 classpath 
+和 上feign.circuitbreaker.enabled=true，Feign 将使用断路器包装所有方法。
+
+SentinelCircuitBreakerAutoConfiguration 在整合Sentinel后会生成CircuitBreaker 实例
+```
+
+5、Feign Spring Cloud 断路器fallback
+```
+当电路打开或出现错误时执行的默认代码路径。
+要为给定的@FeignClient设置启用回退，请将fallback属性设置为实现回退的类名
+
+如果需要访问触发回退的原因，则可以使用fallbackFactory内部的属性@FeignClient  ???
+```
+
+6、Feign 和 @Primary
+```
+Spring Cloud OpenFeign 将所有 Feign 实例默认标记为@Primary
+```
+
+7、Feign 支持继承
+
+8、Feign 请求/响应压缩
+
+9、feign 日志 (未能成功)
+
+10、Feign @QueryMap 支持
+```
+Spring Cloud OpenFeign 提供了一个等效的@SpringQueryMap注解，
+用于将 POJO 或 Map 参数注解为查询参数映射
+如果您需要对生成的查询参数映射进行更多控制，则可以实现自定义QueryMapEncoderbean
+```
+11、[feign 常见的属性](https://docs.spring.io/spring-cloud-openfeign/docs/2.2.10.RELEASE/reference/html/appendix.html)
