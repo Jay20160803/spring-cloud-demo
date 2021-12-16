@@ -30,4 +30,10 @@ public class TestController {
     public String testa(@RequestParam("name")String name){
         return serviceB.test(name);
     }
+
+
+    @GetMapping("test2")
+    public String test2(@RequestParam("name")String name){
+        return "test2";
+    }
 }

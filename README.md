@@ -3,11 +3,8 @@ springboot + nacos + sentinel + gateway + openFeign + spring cloud LoadBalancer 
 服务注册与发现:
 限流降级：
 网关:
-# spring boot/spring cloud/spring cloud alibaba 版本关系
-```
- spring cloud alibaba 版本对应的 spring boot 版本 一致
- spring cloud 对应的spring boot 版本在 github wiki 中查看
-```
+- [spring boot/spring cloud/spring cloud alibaba 版本关系](https://github.com/alibaba/spring-cloud-alibaba/wiki/%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E)
+
 
 # service-a/service-b:
 # 1、整合nacos 服务注册与发现 已完成
@@ -166,3 +163,226 @@ Spring Cloud OpenFeign 提供了一个等效的@SpringQueryMap注解，
 如果您需要对生成的查询参数映射进行更多控制，则可以实现自定义QueryMapEncoderbean
 ```
 11、[feign 常见的属性](https://docs.spring.io/spring-cloud-openfeign/docs/2.2.10.RELEASE/reference/html/appendix.html)
+
+# 4、Spring Cloud Gateway
+1、 添加依赖
+```
+spring-cloud-starter-gateway
+```
+2、配置predicate、filter
+```
+快捷方式配置:
+快捷方式配置由过滤器名称识别，后跟等号 ( =)，后跟由逗号 ( ,)分隔的参数值。
+spring:
+  cloud:
+    gateway:
+      routes:
+      - id: after_route
+        uri: https://example.org
+        predicates:
+        - Cookie=mycookie,mycookievalue
+
+```
+3、路由predicates-factories
+```
+- After=2017-01-20T17:42:47.789-07:00[America/Denver]
+- Before=2017-01-20T17:42:47.789-07:00[America/Denver]
+- Between=2017-01-20T17:42:47.789-07:00[America/Denver], 2017-01-21T17:42:47.789-07:00[America/Denver]
+- Cookie=name, regexp
+- Header=name, regexp
+- Host=**.somehost.org,**.anotherhost.org
+- Method=GET,POST
+- Path=/red/{segment},/blue/{segment}
+- Path=/service/**
+- Query=name, regexp
+- RemoteAddr=192.168.1.1/24
+- Weight=group1, 2
+```
+4、路由 filter-factories
+```
+filters:
+- AddRequestHeader=name, value
+- AddRequestParameter=name, value
+- AddResponseHeader=name, value
+- PrefixPath=/prefix
+- RedirectTo=status, url
+- RemoveRequestHeader=X-Request-Foo
+- RemoveResponseHeader=X-Response-Foo
+- RemoveRequestParameter=name
+- RewritePath=/red(?<segment>/?.*), $\{segment}
+- SetPath=/{segment}
+- SetRequestHeader=name, value
+- SetResponseHeader=name, value
+- SetStatus=status
+- StripPrefix=parts
+- name: Retry
+- name: RequestSize
+
+默认过滤器（要添加过滤器并将其应用于所有路由，您可以使用spring.cloud.gateway.default-filters）
+```
+5、global-filters(全局过滤器)
+```
+已自动注入全局过滤器
+@Bean
+public GlobalFilter customFilter() {
+    return new CustomGlobalFilter();
+}
+
+public class CustomGlobalFilter implements GlobalFilter, Ordered {
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        log.info("custom global filter");
+        return chain.filter(exchange);
+    }
+
+    @Override
+    public int getOrder() {
+        return -1;
+    }
+}
+
+1、组合global-filters和GatewayFilter排序
+按org.springframework.core.Ordered接口排序的
+
+2、ForwardRoutingFilter
+forward:///localendpoint
+
+3、LoadBalancerClientFilter
+lb://myservice
+
+4、ReactiveLoadBalancerClientFilter
+lb://myservice
+
+5、Netty 路由过滤器
+如果位于ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR交换属性中的 URL具有http或https方案，
+则 Netty 路由过滤器运行。它使用 NettyHttpClient进行下游代理请求。
+响应被放入ServerWebExchangeUtils.CLIENT_RESPONSE_ATTR交换属性中以供稍后过滤器使用。
+（还有一个实验WebClientHttpRoutingFilter可以执行相同的功能但不需要 Netty。）
+
+6、NettyWriteResponseFilter
+
+7、routetorequesturl-filter
+
+8、websocket-routing-filter
+```
+
+5、HttpHeadersFilters
+```
+1、forwarded-headers-filter
+2、removehopbyhop-headers-filter
+3、xforwarded-headers-filter
+```
+6、tls-and-ssl
+```
+网关可以通过遵循通常的 Spring 服务器配置来侦听 HTTPS 上的请求
+server:
+  ssl:
+    enabled: true
+    key-alias: scg
+    key-store-password: scg1234
+    key-store: classpath:scg-keystore.p12
+    key-store-type: PKCS12
+```
+7、配置
+```
+PropertiesRouteDefinitionLocator
+```
+8、Http超时配置
+```
+1、全局超时
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 1000
+        response-timeout: 5s
+2、每个路由超时
+      - id: per_route_timeouts
+        uri: https://example.org
+        predicates:
+          - name: Path
+            args:
+              pattern: /delay/{timeout}
+        metadata:
+          response-timeout: 200
+          connect-timeout: 200            
+```
+9、discoveryclient-route-definition-locator
+```
+为所有的服务注册中的service创建默认的路径匹配与过滤器匹配
+默认的路径匹配：
+id: serviceId
+lb://serviceId
+predicates:
+- Path=/serviceId/**
+
+默认的重写路径过滤器，$\{remaining} 替换 /serviceId(?<remaining>/.*)
+filters：
+- RewritePath=/serviceId(?<remaining>/.*), $\{remaining}
+```
+10、reactor-netty-access-logs (Reactor Netty 访问日志)
+```
+Java 属性中设置：
+-Dreactor.netty.http.server.accessLogEnabled=true
+
+logback.xml 中设置：
+
+ <appender name="accessLog" class="ch.qos.logback.core.FileAppender">
+        <file>access_log.log</file>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="async" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="accessLog" />
+    </appender>
+
+    <logger name="reactor.netty.http.server.AccessLog" level="INFO" additivity="false">
+        <appender-ref ref="async"/>
+    </logger>
+```
+11、 cors-configuration(CORS 配置)
+
+12、 actuator-api
+```
+提供gateway访问的接口
+
+配置添加：
+management.endpoint.gateway.enabled=true # default value
+management.endpoints.web.exposure.include=gateway
+
+依赖添加：
+spring-boot-starter-actuator
+
+1、查看与每条路由关联的谓词和过滤器以及任何可用的配置
+/actuator/gateway/routes
+2、检索应用于所有路由的全局过滤器
+/actuator/gateway/globalfilters
+3、检索应用于路由的GatewayFilter工厂
+/actuator/gateway/routefilters
+3、刷新路由缓存
+POST请向发出请求/actuator/gateway/refresh
+4、要检索有关单个路由的信息
+/actuator/gateway/routes/{id}
+5、创建和删除特定路由
+```
+
+13、故障排除
+```
+1、日志级别
+org.springframework.cloud.gateway
+org.springframework.http.server.reactive
+org.springframework.web.reactive
+org.springframework.boot.autoconfigure.web
+reactor.netty
+redisratelimiter
+
+2、窃听
+The Reactor Netty HttpClient and HttpServer can have wiretap enabled.
+When combined with setting the reactor.netty log level to DEBUG or TRACE,
+ it enables the logging of information, 
+ such as headers and bodies sent and received across the wire. To enable wiretap, 
+ set spring.cloud.gateway.httpserver.wiretap=true or spring.cloud.gateway.httpclient.wiretap=true for the HttpServer and HttpClient,
+  respectively.
+```

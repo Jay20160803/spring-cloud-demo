@@ -23,4 +23,9 @@ public class TestController {
         }
         return "hello " + name;
     }
+
+    @GetMapping("test3")
+    public String test3(@RequestParam("name")String name){
+        return "test3 " + name;
+    }
 }
