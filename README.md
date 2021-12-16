@@ -1,4 +1,4 @@
-springboot + nacos + sentinel + gateway + openFeign + spring cloud LoadBalancer  + Security + Sleuth
+springboot + nacos + sentinel + gateway + openFeign + spring cloud LoadBalancer  + Security + Sleuth +  Bus + Zipkin
 
 服务注册与发现:
 限流降级：
